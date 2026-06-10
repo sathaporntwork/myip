@@ -178,23 +178,42 @@
   "use strict";
 
   var ENDPOINTS = {
-    v4: "https://api4.ipify.org?format=json",
-    v6: "https://api6.ipify.org?format=json"
+    v4: [
+      { url: "https://api4.ipify.org?format=json",  parse: function(d){ return d.ip; } },
+      { url: "https://v4.ident.me",                  parse: function(d){ return d.trim(); }, text: true },
+      { url: "https://ipv4.icanhazip.com",            parse: function(d){ return d.trim(); }, text: true }
+    ],
+    v6: [
+      { url: "https://v6.ident.me",                  parse: function(d){ return d.trim(); }, text: true },
+      { url: "https://ipv6.icanhazip.com",            parse: function(d){ return d.trim(); }, text: true },
+      { url: "https://api6.ipify.org?format=json",   parse: function(d){ return d.ip; } }
+    ]
   };
   var TIMEOUT_MS = 9000;
 
   function $(id) { return document.getElementById(id); }
 
-  function fetchWithTimeout(url, ms) {
+  function fetchEndpoint(endpoint, ms) {
     var ctrl = new AbortController();
     var t = setTimeout(function () { ctrl.abort(); }, ms);
-    return fetch(url, { signal: ctrl.signal, cache: "no-store" })
+    return fetch(endpoint.url, { signal: ctrl.signal, cache: "no-store" })
       .then(function (r) {
         clearTimeout(t);
         if (!r.ok) throw new Error("HTTP " + r.status);
-        return r.json();
+        return endpoint.text ? r.text() : r.json();
+      })
+      .then(function (data) {
+        var ip = endpoint.parse(data);
+        if (!ip) throw new Error("No IP in response");
+        return ip;
       })
       .catch(function (e) { clearTimeout(t); throw e; });
+  }
+
+  function tryEndpoints(endpoints, idx) {
+    if (idx >= endpoints.length) return Promise.reject(new Error("All endpoints failed"));
+    return fetchEndpoint(endpoints[idx], TIMEOUT_MS)
+      .catch(function () { return tryEndpoints(endpoints, idx + 1); });
   }
 
   function setStatus(proto, state, text) {
@@ -230,7 +249,8 @@
   }
 
   function enrich(proto, ip) {
-    fetchWithTimeout("https://ipwho.is/" + encodeURIComponent(ip), TIMEOUT_MS)
+    var enrichEndpoint = { url: "https://ipwho.is/" + encodeURIComponent(ip), parse: function(d){ return d; } };
+    fetchEndpoint(enrichEndpoint, TIMEOUT_MS)
       .then(function (info) {
         var box = $("details-" + proto);
         var html = rowsFromInfo(info);
@@ -267,10 +287,9 @@
     $("details-" + proto).classList.remove("show");
     $("details-" + proto).innerHTML = "";
 
-    fetchWithTimeout(ENDPOINTS[proto], TIMEOUT_MS)
-      .then(function (data) {
-        if (data && data.ip) showIp(proto, data.ip);
-        else showNone(proto, proto === "v6" ? "No IPv6 detected" : "Unavailable");
+    tryEndpoints(ENDPOINTS[proto], 0)
+      .then(function (ip) {
+        showIp(proto, ip);
       })
       .catch(function () {
         showNone(proto, proto === "v6" ? "No IPv6 on this network" : "Could not detect");

@@ -13,11 +13,12 @@ Since this utility is entirely client-side and self-contained, you can run it:
 
 ## ✨ Features
 
-- **Dual-Stack IP Detection:** Simultaneously queries IPv4 and IPv6 endpoints asynchronously.
+- **Dual-Stack IP Detection:** Simultaneously queries IPv4 and IPv6 endpoints asynchronously using a resilient multi-endpoint fallback chain.
+- **Ad-Blocker Resilient:** Multiple fallback endpoints are tried in sequence — if a privacy filter blocks one provider, the next is tried automatically with no user interaction required.
 - **Connection Status Indicators:** Clear visual states for both stacks:
   - 🟢 **Connected:** Successful IP detection.
   - 🟡 **Checking:** Resolution in progress.
-  - 🔴 **Not Available / Failed:** No network support or query error (ideal for verifying if your network/VPN lacks IPv6).
+  - 🔴 **Not Available / Failed:** No network support or all endpoints failed (ideal for verifying if your network/VPN lacks IPv6).
 - **Geo-Location & ISP Enrichment:** Automatically fetches network details on success using the `ipwho.is` API:
   - Internet Service Provider (ISP) and Autonomous System Number (ASN).
   - Geographic location (City, Region, Country with flag emoji).
@@ -35,10 +36,16 @@ Since this utility is entirely client-side and self-contained, you can run it:
 ## 🛠️ How It Works
 
 The app operates strictly client-side using Vanilla JS:
-1. **Network Queries:** The browser sends asynchronous requests to the public `ipify` API endpoints:
-   - IPv4: `https://api4.ipify.org?format=json`
-   - IPv6: `https://api6.ipify.org?format=json`
-2. **Aborting Hangs:** Utilizes the `AbortController` API with a `9.0 second` timeout to prevent infinite hangs if one protocol is blocked or unavailable.
+1. **Resilient Fallback Chain:** The browser tries multiple public API endpoints in priority order for each protocol. If any endpoint is blocked (e.g., by an ad blocker, privacy filter, or network policy), the next is tried silently and automatically:
+   - **IPv4 endpoints (in order):**
+     1. `https://api4.ipify.org?format=json` — JSON response
+     2. `https://v4.ident.me` — Plain text, CORS enabled
+     3. `https://ipv4.icanhazip.com` — Plain text, Cloudflare-powered, CORS enabled
+   - **IPv6 endpoints (in order):**
+     1. `https://v6.ident.me` — Plain text, CORS enabled
+     2. `https://ipv6.icanhazip.com` — Plain text, Cloudflare-powered, CORS enabled
+     3. `https://api6.ipify.org?format=json` — JSON response (tried last as it is frequently blocked by EasyPrivacy/Brave Shields)
+2. **Aborting Hangs:** Utilizes the `AbortController` API with a `9.0 second` timeout per endpoint to prevent infinite hangs.
 3. **ISP & Location Enrichment:** Upon obtaining the IP address, a request is fired to `https://ipwho.is/<ip>` to dynamically populate detailed metadata tables.
 4. **Clipboard Copying:** Uses the modern asynchronous `navigator.clipboard` API with a fallback to a dynamically generated `<textarea>` element for older browsers.
 
@@ -58,5 +65,7 @@ myip/
 ## 🌐 API Credits
 
 Special thanks to the free public services powering this tool:
-- [ipify](https://www.ipify.org/) for fast IP address reflection.
-- [ipwhois](https://ipwho.is/) for geography and ASN resolution.
+- [ipify](https://www.ipify.org/) — Fast IP address reflection (IPv4 and IPv6).
+- [ident.me](https://api.ident.me/) — Lightweight dual-stack IP reflection with CORS support.
+- [icanhazip.com](https://icanhazip.com/) — Cloudflare-powered dual-stack IP reflection with CORS support.
+- [ipwhois](https://ipwho.is/) — Geography and ASN resolution.
