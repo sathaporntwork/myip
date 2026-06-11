@@ -1,6 +1,6 @@
 # What Is My IP? — Public IPv4 & IPv6 Checker
 
-A modern, high-performance, single-file web application to check and display your public IPv4 and IPv6 addresses. It reflects your connection stack in real-time, displays status indicators, copies addresses with a single click, and enriches the results with network and geographic details (ISP, ASN, Location, and Timezone).
+A modern, high-performance, single-file web application to check and display your public IPv4 and IPv6 addresses. It reflects your connection stack in real-time, displays status indicators, copies addresses with a single click, opens detailed IP information on [ipinfo.io](https://ipinfo.io/), and enriches the results with network and geographic details (ISP, ASN, Location, and Timezone).
 
 ---
 
@@ -28,8 +28,10 @@ Since this utility is entirely client-side and self-contained, you can run it:
   - Glassmorphic panels with subtle micro-animations (loading spinners, hover effects).
   - Fully responsive grid layout optimized for mobile, tablet, and desktop screens.
   - Embedded high-resolution vector (SVG) favicon assets.
-- **Quick Copying:** Quick copy button with feedback transitions and automatic clipboard API fallback support.
-- **Self-Contained & Lightweight:** No build step, no npm modules, and no external CSS/JS framework dependencies. Under 35KB in total.
+- **Quick Actions per Card:**
+  - 📋 **Copy** — Copies the IP address to clipboard with animated confirmation. Uses modern `navigator.clipboard` API with `<textarea>` fallback for older browsers.
+  - 🔍 **IP Info** — Opens `https://ipinfo.io/{ip}` in a new tab for full WHOIS, routing, and abuse contact information. Button is disabled when no IP is available.
+- **Self-Contained & Lightweight:** No build step, no npm modules, and no external CSS/JS framework dependencies. Under 37KB in total.
 
 ---
 
@@ -48,6 +50,7 @@ The app operates strictly client-side using Vanilla JS:
 2. **Aborting Hangs:** Utilizes the `AbortController` API with a `9.0 second` timeout per endpoint to prevent infinite hangs.
 3. **ISP & Location Enrichment:** Upon obtaining the IP address, a request is fired to `https://ipwho.is/<ip>` to dynamically populate detailed metadata tables.
 4. **Clipboard Copying:** Uses the modern asynchronous `navigator.clipboard` API with a fallback to a dynamically generated `<textarea>` element for older browsers.
+5. **IP Info Button:** Each card has a 🔍 **IP Info** button that opens `https://ipinfo.io/{ip}` in a new tab (`noopener,noreferrer`). The button is enabled only after a successful IP is resolved, and disabled automatically on failure or during a re-check.
 
 ---
 
@@ -69,3 +72,4 @@ Special thanks to the free public services powering this tool:
 - [ident.me](https://api.ident.me/) — Lightweight dual-stack IP reflection with CORS support.
 - [icanhazip.com](https://icanhazip.com/) — Cloudflare-powered dual-stack IP reflection with CORS support.
 - [ipwhois](https://ipwho.is/) — Geography and ASN resolution.
+- [ipinfo.io](https://ipinfo.io/) — Full IP intelligence (WHOIS, routing, ASN, abuse contacts) opened via the IP Info button.

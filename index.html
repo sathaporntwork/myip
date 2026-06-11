@@ -122,6 +122,9 @@
   button:hover { border-color: var(--accent); background: #20305f; }
   button:active { transform: translateY(1px); }
   button.copied { border-color: var(--good); color: var(--good); }
+  button.info-btn { border-color: rgba(34,211,238,.3); color: var(--accent-2); background: rgba(34,211,238,.08); margin-left: auto; }
+  button.info-btn:hover { border-color: var(--accent-2); background: rgba(34,211,238,.16); color: #fff; }
+  button.info-btn:disabled { opacity: .35; pointer-events: none; }
 
   .toolbar { display: flex; justify-content: center; margin: 26px 0 10px; }
   .refresh { padding: 11px 22px; background: linear-gradient(90deg, var(--accent), #3b6fe0); border: 0; }
@@ -149,6 +152,7 @@
         <div class="ip loading" id="ip-v4"><span class="spin"></span>&nbsp; resolving…</div>
         <div class="actions">
           <button id="copy-v4" disabled>📋 Copy</button>
+          <button id="info-v4" class="info-btn" disabled>🔍 IP Info</button>
         </div>
         <div class="details" id="details-v4"></div>
       </section>
@@ -162,6 +166,7 @@
         <div class="ip loading" id="ip-v6"><span class="spin"></span>&nbsp; resolving…</div>
         <div class="actions">
           <button id="copy-v6" disabled>📋 Copy</button>
+          <button id="info-v6" class="info-btn" disabled>🔍 IP Info</button>
         </div>
         <div class="details" id="details-v6"></div>
       </section>
@@ -267,6 +272,9 @@
     var btn = $("copy-" + proto);
     btn.disabled = false;
     btn.dataset.ip = ip;
+    var infoBtn = $("info-" + proto);
+    infoBtn.disabled = false;
+    infoBtn.dataset.ip = ip;
     enrich(proto, ip);
   }
 
@@ -276,6 +284,7 @@
     el.textContent = msg;
     setStatus(proto, "err", proto === "v6" ? "not available" : "failed");
     $("copy-" + proto).disabled = true;
+    $("info-" + proto).disabled = true;
   }
 
   function lookup(proto) {
@@ -324,8 +333,19 @@
     });
   }
 
+  function wireInfo(proto) {
+    var btn = $("info-" + proto);
+    btn.addEventListener("click", function () {
+      var ip = btn.dataset.ip;
+      if (!ip) return;
+      window.open("https://ipinfo.io/" + encodeURIComponent(ip), "_blank", "noopener,noreferrer");
+    });
+  }
+
   wireCopy("v4");
   wireCopy("v6");
+  wireInfo("v4");
+  wireInfo("v6");
   $("refresh").addEventListener("click", runAll);
   runAll();
 })();
